@@ -9,25 +9,26 @@
 
 enum class PackageStatus { UNINSTALLED = 0, INSTALLED, TOINSTALL };
 
+enum class VersionCompareIdentifier { EQUAL = 0, SMALLER, GREATOR, UNKNOWN, GREATOR_OR_EQUAL, SMALLER_OR_EQUAL };
+
+
 struct Package {
   std::string name;
   std::string version;
-  std::vector<std::tuple<std::string, std::string>> dependencies;
+  std::vector<std::tuple<std::string, VersionCompareIdentifier, std::string>> dependencies;
 
   PackageStatus status;
 
   Package(const Package &other);
 
   inline Package(std::string name, std::string version,
-                 std::vector<std::tuple<std::string, std::string>> dependencies,
+                 std::vector<std::tuple<std::string, VersionCompareIdentifier, std::string>> dependencies,
                  PackageStatus status = PackageStatus::UNINSTALLED)
       : name(name),
         version(version),
         dependencies(dependencies),
         status(status) {}
 };
-
-enum class VersionCompareResult { EQUAL = 0, OLDER, NEWER, UNKNOWN };
 
 /**
  * @brief VersionNumberPart
@@ -51,7 +52,7 @@ class VersionNumberPart {
   bool operator==(const VersionNumberPart &other) const;
 };
 
-VersionCompareResult comparePkgVersion(const std::string &pkg1,
+VersionCompareIdentifier comparePkgVersion(const std::string &pkg1,
                                        const std::string &pkg2);
 
 class PackageManager {

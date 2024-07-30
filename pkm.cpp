@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdio>
 #include <memory>
 
 bool _isDigit(const std::string& str) {
@@ -26,19 +27,54 @@ bool PackageManager::checkDependencies(
   }
 
   bool resolved = true;
-  auto check_deps = [&, this, pkgInstallList](bool& resolved) -> void {
+
+  auto version_checker = [](const std::string &pkg1,const std::string &pkg2,const VersionCompareIdentifier &compare_identifier) -> bool{
+    auto result = comparePkgVersion(pkg1,pkg2);
+
+    switch (compare_identifier) {
+      case VersionCompareIdentifier::GREATOR_OR_EQUAL:
+        if (result == VersionCompareIdentifier::GREATOR || result == VersionCompareIdentifier::EQUAL)
+          return true;
+        else
+          return false;
+        break;
+      case VersionCompareIdentifier::SMALLER_OR_EQUAL:
+        if (result == VersionCompareIdentifier::SMALLER || result == VersionCompareIdentifier::EQUAL)
+          return true;
+        else
+          return false;
+        break;
+      default:
+        if (result == compare_identifier)
+          return true;
+        else
+          return false;
+    }
+  };
+  auto check_deps = [=, &pkgInstallList](bool& resolved) -> void {
     for (const auto& dep : pkg.dependencies) {
       if (packages.count(std::get<0>(dep))) {
         // Required deps is installed, checking it
         auto this_dep = packages.at(std::get<0>(dep));
         if (this_dep.status == PackageStatus::INSTALLED) {
-          continue;
+          // Checking dependency version is available
+          if (version_checker(this_dep.version, std::get<2>(dep), std::get<1>(dep)))
+            continue;
+          else
+            resolved = false;
         } else {
-          if (this->checkDependencies(this_dep, pkgInstallList)) {
+          // Checking dependency version is available
+          if (!version_checker(this_dep.version, std::get<2>(dep), std::get<1>(dep))) {
+            resolved = false;
             continue;
           } else {
-            resolved = false;
+            if (this->checkDependencies(this_dep, pkgInstallList)) {
+              continue;
+            } else {
+              resolved = false;
+            }
           }
+
           resolved = false;
         }
       } else {
@@ -172,12 +208,11 @@ bool VersionNumberPart::operator==(const VersionNumberPart& other) const {
  * Compare package version for pkg1 and pkg2
  * Result: pkg1 is xxx than pkg2
  */
-VersionCompareResult comparePkgVersion(const std::string& pkg1,
+VersionCompareIdentifier comparePkgVersion(const std::string& pkg1,
                                        const std::string& pkg2) {
-
   // If they are the same, return EQUAL
   if (pkg1 == pkg2) {
-    return VersionCompareResult::EQUAL;
+    return VersionCompareIdentifier::EQUAL;
   }
 
   // Split two version string
@@ -223,29 +258,29 @@ VersionCompareResult comparePkgVersion(const std::string& pkg1,
     // The longest one consider the new/bigger one.
     if (i >= pkg1_version_length) {
       if (pkg2_version[i] == VersionNumberPart("~")) {
-        // This means that, pkg1 and pkg2 has same version string 
+        // This means that, pkg1 and pkg2 has same version string
         // brfore index 1. However, if the longer one is ending
-        // with ~, it is always smaller than the shorter one that 
+        // with ~, it is always smaller than the shorter one that
         // dose not have ~
-        return VersionCompareResult::NEWER;
+        return VersionCompareIdentifier::GREATOR;
       } else {
-        return VersionCompareResult::OLDER;
+        return VersionCompareIdentifier::SMALLER;
       }
     } else if (i >= pkg2_version_length) {
       if (pkg1_version[i] == VersionNumberPart("~")) {
-        return VersionCompareResult::OLDER;
+        return VersionCompareIdentifier::SMALLER;
       } else {
-        return VersionCompareResult::NEWER;
+        return VersionCompareIdentifier::GREATOR;
       }
     }
 
     // Compare two version number part
     if (pkg1_version[i] < pkg2_version[i]) {
-      return VersionCompareResult::OLDER;
+      return VersionCompareIdentifier::SMALLER;
     } else if (pkg1_version[i] > pkg2_version[i]) {
-      return VersionCompareResult::NEWER;
+      return VersionCompareIdentifier::GREATOR;
     }
   }
 
-  return VersionCompareResult::UNKNOWN;
+  return VersionCompareIdentifier::UNKNOWN;
 }
