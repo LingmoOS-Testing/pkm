@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <string>
+#include <ctype.h>
 
 /**
  * @Name: enum class VersionCompareIdentifier

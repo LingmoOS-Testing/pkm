@@ -25,13 +25,18 @@
 class PackageManager {
  public:
   void addPackage(const Package& pkg);
+  //For test only
+  void addlocalInstalledPackage(const Package& pkg);
+  
   bool checkDependencies(
       const Package& pkg,
       std::shared_ptr<std::vector<Package>> pkgInstallList = nullptr,
       std::shared_ptr<std::vector<PackageError>> errorLists = nullptr);
 
  private:
-  std::map<std::string, Package> packages;
+  std::map<std::string, Package> packageCacheList;
+
+  std::map<std::string, Package> packageInstalledList;
 
   bool m_pkgVersionChecker(const std::string& pkg1, const std::string& pkg2,
                            const VersionCompareIdentifier& compare_identifier);

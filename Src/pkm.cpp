@@ -18,7 +18,11 @@
 #include <memory>
 
 void PackageManager::addPackage(const Package& pkg) {
-  packages.emplace(pkg.name, pkg);
+  packageCacheList.emplace(pkg.name, pkg);
+}
+
+void PackageManager::addlocalInstalledPackage(const Package& pkg) {
+  packageInstalledList.emplace(pkg.name, pkg);
 }
 
 bool PackageManager::checkDependencies(
@@ -97,53 +101,46 @@ void PackageManager::m_checkPackageStatus(
     const std::shared_ptr<std::vector<PackageError>>& errorLists) {
   // Iterate through every required dependencies
   for (const auto& dep : pkg.dependencies) {
-    // Checking the required package is in our package cache list
-    if (packages.count(std::get<0>(dep)) > 0) {
+    // Checking the required package is in our local installed list
+    if (packageInstalledList.count(std::get<0>(dep)) > 0) {
+      // If we have the package installed locally
+      auto this_dep = packageInstalledList.at(std::get<0>(dep));
+      // Checking dependency version is available
+      if (m_pkgVersionChecker(this_dep.version, std::get<2>(dep),
+                              std::get<1>(dep))) {
+        continue;  // Have required version install, continue.
+      }
+    }
+    // Otherwise, we need to check if we can install it
+    if (packageCacheList.count(std::get<0>(dep)) > 0) {
       // Get the package information from cache
-      auto this_dep = packages.at(std::get<0>(dep));
-      if (this_dep.status == PackageStatus::INSTALLED) {
-        // Required deps is installed, checking it
+      auto this_dep = packageCacheList.at(std::get<0>(dep));
 
-        // Checking dependency version is available
-        if (m_pkgVersionChecker(this_dep.version, std::get<2>(dep),
-                                std::get<1>(dep))) {
-          continue;  // Have required version install, continue.
-        } else {
-          // ToDo: Try to test whether it can be upgraded or downgrade
-          auto err =
-              PackageError{pkg, dep, this_dep,
-                           PackageError::ErrorType::DEPENDENCY_NOT_MATCH};
-          errorLists->emplace_back(err);
-          resolved = false;  // Installed version doesn't meet requirement
-        }
+      // Checking dependency version is available
+      if (!m_pkgVersionChecker(this_dep.version, std::get<2>(dep),
+                               std::get<1>(dep))) {
+        // If the package is not install and we don't have the required
+        // version Raise error
+        auto err = PackageError{pkg, dep, this_dep,
+                                PackageError::ErrorType::DEPENDENCY_NOT_MATCH};
+        errorLists->emplace_back(err);
+        resolved = false;
+        continue;
       } else {
-        // Checking dependency version is available
-        if (!m_pkgVersionChecker(this_dep.version, std::get<2>(dep),
-                                 std::get<1>(dep))) {
-          // If the package is not install and we don't have the required
-          // version Raise error
-          auto err =
-              PackageError{pkg, dep, this_dep,
-                           PackageError::ErrorType::DEPENDENCY_NOT_MATCH};
-          errorLists->emplace_back(err);
-          resolved = false;
+        // Otherwise, we need to check the dependency of this package
+        // recursively
+        if (this->checkDependencies(this_dep, pkgInstallList, errorLists)) {
+          // If the sub-dependency is resolved, we can continue
           continue;
         } else {
-          // Otherwise, we need to check the dependency of this package
-          // recursively
-          if (this->checkDependencies(this_dep, pkgInstallList)) {
-            // If the sub-dependency is resolved, we can continue
-            continue;
-          } else {
-            resolved = false;
-          }
+          auto err = PackageError{pkg, dep, this_dep,
+                                PackageError::ErrorType::DEPENDENCY_NOT_INSTALLABLE};
+          errorLists->emplace_back(err);
+          resolved = false;
         }
-        resolved = false;
       }
     } else {
-      // ToDo: Check locally install package
-      auto err = PackageError{pkg, dep,
-                              Package{std::get<0>(dep), std::get<2>(dep), {}},
+      auto err = PackageError{pkg, dep, Package{{}, {}, {}, {}},
                               PackageError::ErrorType::DEPENDENCY_NOT_FOUND};
       errorLists->emplace_back(err);
       resolved = false;

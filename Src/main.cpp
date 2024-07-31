@@ -1,6 +1,8 @@
 #include <iostream>
 
 #include "pkm.hpp"
+
+#include <cstdint>
 int main() {
   PackageManager manager;
 
@@ -8,6 +10,7 @@ int main() {
   Package SubDep1("SubDep1", "2.0.0", {}, PackageStatus::UNINSTALLED);
   Package SubDep2("SubDep2", "1.5.0", {}, PackageStatus::UNINSTALLED);
   Package SubDep3("SubDep3", "3.0.0", {}, PackageStatus::UNINSTALLED);
+  Package SubDep3_old("SubDep3", "2.0.0", {}, PackageStatus::UNINSTALLED);
 
   // 一级子包定义
   Package Dep1(
@@ -23,15 +26,16 @@ int main() {
   // 添加到包管理器
   manager.addPackage(SubDep1);
   manager.addPackage(SubDep2);
-  manager.addPackage(SubDep3);
+  // manager.addPackage(SubDep3);
+  manager.addlocalInstalledPackage(SubDep3_old);
   manager.addPackage(Dep1);
   manager.addPackage(Dep2);
 
   // 待安装的主包
   Package MainApp(
       "MainApp", "1.0",
-      {{"Dep1", VersionCompareIdentifier::GREATOR_OR_EQUAL, "3.0.0"},
-       {"Dep10", VersionCompareIdentifier::EQUAL, "1.0.0"}},
+      {{"Dep1", VersionCompareIdentifier::GREATOR_OR_EQUAL, "1.0.0"},
+       {"Dep2", VersionCompareIdentifier::EQUAL, "1.0.0"}},
       PackageStatus::TOINSTALL);
 
   auto pkgInstList = std::make_shared<std::vector<Package>>();
@@ -40,30 +44,39 @@ int main() {
   if (manager.checkDependencies(MainApp, pkgInstList, errorList)) {
     std::cout << "Successfully resolved deps." << std::endl;
     std::cout << "Need to install following package(s):" << std::endl;
-    for (auto const &p : *pkgInstList) {
+    for (::int64_t i = pkgInstList->size() - 1; i >= 0; i--) {
+      auto p = pkgInstList->at(i);
       std::cout << "  " << p.name << " " << p.version << std::endl;
     }
 
   } else {
     std::cout << "Unable to resolve deps" << std::endl;
-
-    for (auto const &e : *errorList) {
+    
+    for (::int64_t i = errorList->size() - 1; i >= 0; i--) {
+      auto e = errorList->at(i);
       switch (e.errorType) {
         case PackageError::ErrorType::DEPENDENCY_NOT_FOUND:
           std::cout << "  " << e.currentPackage.name << " "
                     << e.currentPackage.version << " depends on "
                     << std::get<0>(e.wantedDependency) << " "
                     << std::get<2>(e.wantedDependency) << " "
-                    << "which is not found." << std::endl;
+                    << "that is not found." << std::endl;
           break;
         case PackageError::ErrorType::DEPENDENCY_NOT_MATCH:
           std::cout << "  " << e.currentPackage.name << " "
                     << e.currentPackage.version << " depends on "
                     << std::get<0>(e.wantedDependency) << " "
                     << std::get<2>(e.wantedDependency) << " "
-                    << "but " << e.currentDependency.name << " "
+                    << "but only" << e.currentDependency.name << " "
                     << e.currentDependency.version << " "
-                    << "is to be installed." << std::endl;
+                    << "is installable." << std::endl;
+          break;
+        case PackageError::ErrorType::DEPENDENCY_NOT_INSTALLABLE:
+          std::cout << "  " << e.currentPackage.name << " "
+                    << e.currentPackage.version << " depends on "
+                    << std::get<0>(e.wantedDependency) << " "
+                    << std::get<2>(e.wantedDependency) << " "
+                    << "that is not installable." << std::endl;
           break;
         default:
           break;
