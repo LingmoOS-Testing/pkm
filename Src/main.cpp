@@ -4,7 +4,7 @@
 int main() {
   PackageManager manager;
 
-  Package Dep1("Dep1", "1.0.0~1", {}, PackageStatus::UNINSTALLED);
+  Package Dep1("Dep1", "1.0.0+1", {}, PackageStatus::UNINSTALLED);
   Package Dep2("Dep2", "1.0.0", {}, PackageStatus::UNINSTALLED);
   manager.addPackage(Dep1);
   manager.addPackage(Dep2);
