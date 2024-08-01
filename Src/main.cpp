@@ -2,8 +2,17 @@
 
 #include "pkm.hpp"
 
+#include "database_utils.hpp"
+
 #include <cstdint>
+
 int main() {
+  auto db = DatabaseUtils();
+  db.m_initDatabase();
+  return 0;
+}
+
+int main1() {
   PackageManager manager;
 
   // 子包定义

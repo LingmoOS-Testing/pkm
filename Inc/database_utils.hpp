@@ -16,10 +16,10 @@
 
 #define DB_PATH "/home/elysia/Projects/PackageManager/pkm.db"
 
-#include <string>
-#include <memory>
-
 #include <SQLiteCpp/SQLiteCpp.h>
+
+#include <memory>
+#include <string>
 
 class DatabaseUtils {
  private:
@@ -29,6 +29,8 @@ class DatabaseUtils {
 
  public:
   DatabaseUtils(std::string dbPath = DB_PATH);
+
+  bool m_initDatabase();
 };
 
 #endif  // __DATABASE_UTILS_HPP__

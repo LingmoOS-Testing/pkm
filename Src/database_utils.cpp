@@ -13,11 +13,36 @@
 
 #include "database_utils.hpp"
 
+#include <iostream>
 #include <memory>
+
+#include "SQLiteCpp/Transaction.h"
 
 DatabaseUtils::DatabaseUtils(std::string dbPath) {
   // Create or open database
   m_dbPath = dbPath;
   m_db = std::make_shared<SQLite::Database>(
       m_dbPath, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
+}
+
+bool DatabaseUtils::m_initDatabase() {
+  try {
+    m_db->exec(R"(DROP TABLE IF EXISTS "main"."packages")");
+
+    SQLite::Transaction transaction(*m_db);
+
+    m_db->exec(R"(CREATE TABLE "packages" (
+              "id"  INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+              "name"  TEXT NOT NULL COLLATE BINARY ,
+              "version"  TEXT NOT NULL,
+              "description"  TEXT
+              );)");
+
+    // Commit transaction
+    transaction.commit();
+  } catch (std::exception& e) {
+    std::cout << "Database exception: " << e.what() << std::endl;
+    return false;
+  }
+  return true;
 }
