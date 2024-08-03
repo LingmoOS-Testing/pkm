@@ -14,7 +14,7 @@
 #ifndef __DATABASE_UTILS_HPP__
 #define __DATABASE_UTILS_HPP__
 
-#define DB_PATH "/home/elysia/Projects/PackageManager/pkm.db"
+#define DB_PATH "/cygdrive/e/Projects/LingmoOS/pkm/pkm.db"
 
 #include <SQLiteCpp/SQLiteCpp.h>
 

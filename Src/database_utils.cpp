@@ -28,6 +28,7 @@ DatabaseUtils::DatabaseUtils(std::string dbPath) {
 bool DatabaseUtils::m_initDatabase() {
   try {
     m_db->exec(R"(DROP TABLE IF EXISTS "main"."packages")");
+    m_db->exec(R"(DROP TABLE IF EXISTS "main"."dependencies")");
 
     SQLite::Transaction transaction(*m_db);
 
@@ -35,7 +36,17 @@ bool DatabaseUtils::m_initDatabase() {
               "id"  INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
               "name"  TEXT NOT NULL COLLATE BINARY ,
               "version"  TEXT NOT NULL,
-              "description"  TEXT
+              "install_type"  INTEGER NOT NULL
+              );)");
+
+    m_db->exec(R"(CREATE TABLE dependencies (
+              id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+              package_id INTEGER NOT NULL,
+              dependency_id INTEGER NOT NULL,
+              min_version VARCHAR(255),
+              max_version VARCHAR(255),
+              FOREIGN KEY (package_id) REFERENCES packages(id) ON DELETE CASCADE,
+              FOREIGN KEY (dependency_id) REFERENCES packages(id) ON DELETE CASCADE
               );)");
 
     // Commit transaction

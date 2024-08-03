@@ -28,6 +28,13 @@
 enum class PackageStatus { UNINSTALLED = 0, INSTALLED, TOINSTALL };
 
 /**
+ * @Name: enum class PackageInstallType
+ * @Description: AUTO means package is automatically installed as a dependency.
+ * @Others:
+ */
+enum class PackageInstallType {AUTO = 0, MANUAL};
+
+/**
  * @Name: struct Package
  * @Description: A class to store and process a package's information.
  * @Others:
