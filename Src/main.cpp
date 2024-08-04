@@ -8,7 +8,8 @@
 
 int main() {
   auto db = DatabaseUtils();
-  db.m_initDatabase();
+  // db.m_initDatabase();
+  db.getPackage("test");
   return 0;
 }
 

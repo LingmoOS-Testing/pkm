@@ -21,6 +21,8 @@
 #include <memory>
 #include <string>
 
+#include "package_utils.hpp"
+
 class DatabaseUtils {
  private:
   std::shared_ptr<SQLite::Database> m_db;
@@ -31,6 +33,8 @@ class DatabaseUtils {
   DatabaseUtils(std::string dbPath = DB_PATH);
 
   bool m_initDatabase();
+
+  bool getPackage(const std::string& pkg);
 };
 
 #endif  // __DATABASE_UTILS_HPP__

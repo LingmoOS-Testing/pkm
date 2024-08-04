@@ -15,6 +15,8 @@
 
 #include <iostream>
 #include <memory>
+#include <exception>
+#include <cstdint>
 
 #include "SQLiteCpp/Transaction.h"
 
@@ -51,6 +53,32 @@ bool DatabaseUtils::m_initDatabase() {
 
     // Commit transaction
     transaction.commit();
+  } catch (std::exception& e) {
+    std::cout << "Database exception: " << e.what() << std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool DatabaseUtils::getPackage(const std::string& pkg) {
+  try {
+    SQLite::Statement query(*m_db,
+                            R"(SELECT * FROM main.packages WHERE name = ?)");
+
+    query.bind(1, pkg);
+
+    // We only need and normally can only have one package search result
+    if (query.executeStep()) {
+      ::int64_t id = query.getColumn(0);
+      std::string name = query.getColumn(1);
+      std::string version = query.getColumn(2);
+      ::int8_t install_type = query.getColumn(3);
+
+      std::cout << id << " " << name << " " << version << " " << install_type;
+    } else {
+      return false;
+    }
+
   } catch (std::exception& e) {
     std::cout << "Database exception: " << e.what() << std::endl;
     return false;
