@@ -68,15 +68,15 @@ int main1() {
         case PackageError::ErrorType::DEPENDENCY_NOT_FOUND:
           std::cout << "  " << e.currentPackage.name << " "
                     << e.currentPackage.version << " depends on "
-                    << std::get<0>(e.wantedDependency) << " "
-                    << std::get<2>(e.wantedDependency) << " "
+                    << e.wantedDependency.name << " "
+                    << e.wantedDependency.version << " "
                     << "that is not found." << std::endl;
           break;
         case PackageError::ErrorType::DEPENDENCY_NOT_MATCH:
           std::cout << "  " << e.currentPackage.name << " "
                     << e.currentPackage.version << " depends on "
-                    << std::get<0>(e.wantedDependency) << " "
-                    << std::get<2>(e.wantedDependency) << " "
+                    << e.wantedDependency.name << " "
+                    << e.wantedDependency.version << " "
                     << "but only" << e.currentDependency.name << " "
                     << e.currentDependency.version << " "
                     << "is installable." << std::endl;
@@ -84,8 +84,8 @@ int main1() {
         case PackageError::ErrorType::DEPENDENCY_NOT_INSTALLABLE:
           std::cout << "  " << e.currentPackage.name << " "
                     << e.currentPackage.version << " depends on "
-                    << std::get<0>(e.wantedDependency) << " "
-                    << std::get<2>(e.wantedDependency) << " "
+                    << e.wantedDependency.name << " "
+                    << e.wantedDependency.version << " "
                     << "that is not installable." << std::endl;
           break;
         default:

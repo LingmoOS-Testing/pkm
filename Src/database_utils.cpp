@@ -74,7 +74,7 @@ bool DatabaseUtils::getPackage(const std::string& pkg) {
       std::string version = query.getColumn(2);
       ::int8_t install_type = query.getColumn(3);
 
-      std::cout << id << " " << name << " " << version << " " << install_type;
+      // Then, we need to get its dependencies.
     } else {
       return false;
     }

@@ -102,23 +102,23 @@ void PackageManager::m_checkPackageStatus(
   // Iterate through every required dependencies
   for (const auto& dep : pkg.dependencies) {
     // Checking the required package is in our local installed list
-    if (packageInstalledList.count(std::get<0>(dep)) > 0) {
+    if (packageInstalledList.count(dep.name) > 0) {
       // If we have the package installed locally
-      auto this_dep = packageInstalledList.at(std::get<0>(dep));
+      auto this_dep = packageInstalledList.at(dep.name);
       // Checking dependency version is available
-      if (m_pkgVersionChecker(this_dep.version, std::get<2>(dep),
-                              std::get<1>(dep))) {
+      if (m_pkgVersionChecker(this_dep.version, dep.version,
+                              dep.compare_id)) {
         continue;  // Have required version install, continue.
       }
     }
     // Otherwise, we need to check if we can install it
-    if (packageCacheList.count(std::get<0>(dep)) > 0) {
+    if (packageCacheList.count(dep.name) > 0) {
       // Get the package information from cache
-      auto this_dep = packageCacheList.at(std::get<0>(dep));
+      auto this_dep = packageCacheList.at(dep.name);
 
       // Checking dependency version is available
-      if (!m_pkgVersionChecker(this_dep.version, std::get<2>(dep),
-                               std::get<1>(dep))) {
+      if (!m_pkgVersionChecker(this_dep.version, dep.version,
+                               dep.compare_id)) {
         // If the package is not install and we don't have the required
         // version Raise error
         auto err = PackageError{pkg, dep, this_dep,

@@ -5,17 +5,27 @@
  * Version: 0.0.1
  * Date: 24/07/31
  * Description: Definitions of package related functions.
- * Others: 
- * Function List: 
- * History: 
- *   Elysia 24/07/31 0.0.1 Create this file. 
+ * Others:
+ * Function List:
+ * History:
+ *   Elysia 24/07/31 0.0.1 Create this file.
  *************************************************/
 
- #include "package_utils.hpp"
+#include "package_utils.hpp"
 
- Package::Package(const Package& other) {
+Package::Package(const Package& other) {
   name = other.name;
   version = other.version;
   dependencies = other.dependencies;
   status = other.status;
 }
+
+Package::Package(
+    std::string name, std::string version,
+    std::vector<Dependency>
+        dependencies,
+    PackageStatus status)
+    : name(name),
+      version(version),
+      dependencies(dependencies),
+      status(status) {}

@@ -10,7 +10,7 @@
  * History:
  *   Elysia 24/07/31 0.0.1 Create this file.
  *************************************************/
- 
+
 #ifndef __PACKAGE_UTILS_HPP__
 #define __PACKAGE_UTILS_HPP__
 
@@ -32,7 +32,19 @@ enum class PackageStatus { UNINSTALLED = 0, INSTALLED, TOINSTALL };
  * @Description: AUTO means package is automatically installed as a dependency.
  * @Others:
  */
-enum class PackageInstallType {AUTO = 0, MANUAL};
+enum class PackageInstallType { AUTO = 0, MANUAL };
+
+/**
+ * @Name struct Dependency
+ * @Description: Dependency structure
+ */
+struct Dependency {
+  std::string name;
+
+  VersionCompareIdentifier compare_id;
+
+  std::string version;
+};
 
 /**
  * @Name: struct Package
@@ -42,22 +54,16 @@ enum class PackageInstallType {AUTO = 0, MANUAL};
 struct Package {
   std::string name;
   std::string version;
-  std::vector<std::tuple<std::string, VersionCompareIdentifier, std::string>>
-      dependencies;
+  std::vector<Dependency>
+      dependencies;  // name, compare method, version requirement
 
   PackageStatus status;
 
   Package(const Package &other);
 
-  inline Package(std::string name, std::string version,
-                 std::vector<std::tuple<std::string, VersionCompareIdentifier,
-                                        std::string>>
-                     dependencies,
-                 PackageStatus status = PackageStatus::UNINSTALLED)
-      : name(name),
-        version(version),
-        dependencies(dependencies),
-        status(status) {}
+  Package(std::string name, std::string version,
+          std::vector<Dependency> dependencies,
+          PackageStatus status = PackageStatus::UNINSTALLED);
 };
 
 class PackageError {
@@ -76,18 +82,14 @@ class PackageError {
 
   Package currentPackage;
 
-  std::tuple<std::string, VersionCompareIdentifier, std::string>
-      wantedDependency;
+  Dependency wantedDependency;
 
   Package currentDependency;
 
   ErrorType errorType;
 
-  inline PackageError(
-      Package currentPackage,
-      std::tuple<std::string, VersionCompareIdentifier, std::string>
-          wantedPackage,
-      Package currentDependency, ErrorType errorType)
+  inline PackageError(Package currentPackage, Dependency wantedPackage,
+                      Package currentDependency, ErrorType errorType)
       : currentPackage(currentPackage),
         wantedDependency(wantedPackage),
         currentDependency(currentDependency),
