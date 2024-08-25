@@ -13,10 +13,11 @@
 
 #include "database_utils.hpp"
 
+#include <cstdint>
+#include <exception>
 #include <iostream>
 #include <memory>
-#include <exception>
-#include <cstdint>
+#include <string>
 
 #include "SQLiteCpp/Transaction.h"
 
@@ -45,8 +46,8 @@ bool DatabaseUtils::m_initDatabase() {
               id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
               package_id INTEGER NOT NULL,
               dependency_id INTEGER NOT NULL,
-              min_version VARCHAR(255),
-              max_version VARCHAR(255),
+              version VARCHAR(255) NOT NULL,
+              version_requirement INTEGER(255) NOT NULL,
               FOREIGN KEY (package_id) REFERENCES packages(id) ON DELETE CASCADE,
               FOREIGN KEY (dependency_id) REFERENCES packages(id) ON DELETE CASCADE
               );)");
@@ -72,7 +73,7 @@ bool DatabaseUtils::getPackage(const std::string& pkg) {
       ::int64_t id = query.getColumn(0);
       std::string name = query.getColumn(1);
       std::string version = query.getColumn(2);
-      ::int8_t install_type = query.getColumn(3);
+      ::int64_t version_requirement = query.getColumn(3);
 
       // Then, we need to get its dependencies.
     } else {
@@ -85,3 +86,43 @@ bool DatabaseUtils::getPackage(const std::string& pkg) {
   }
   return true;
 }
+
+std::vector<Dependency> DatabaseUtils::getDependencies(
+    const int64_t& packageId) {
+  try {
+    SQLite::Statement query(
+        *m_db, R"(SELECT * FROM main.dependencies WHERE package_id = ?)");
+
+    query.bind(1, packageId);
+
+    auto result = std::vector<Dependency>();
+
+    while (query.executeStep()) {
+      ::int64_t id = query.getColumn(0);
+      ::int64_t package_id = query.getColumn(1);
+      ::int64_t dependency_id = query.getColumn(2);
+      std::string min_version = query.getColumn(3);
+      std::string max_version = query.getColumn(4);
+
+      std::string dependency_name;
+
+      SQLite::Statement query_name(
+          *m_db, R"(SELECT * FROM main.packages WHERE name = ?)");
+      query_name.bind(1, dependency_id);
+
+      if (query.executeStep()) {
+        dependency_name = (std::string)query.getColumn(1);
+      } else {
+        throw std::exception();
+      }
+
+      //result.emplace_back({dependency_name, });
+    }
+
+  } catch (std::exception& e) {
+    std::cout << "Database exception: " << e.what() << std::endl;
+    return {};
+  }
+  return {};
+}
+

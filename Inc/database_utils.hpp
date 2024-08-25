@@ -20,6 +20,8 @@
 
 #include <memory>
 #include <string>
+#include <vector>
+#include <cstdint>
 
 #include "package_utils.hpp"
 
@@ -35,6 +37,8 @@ class DatabaseUtils {
   bool m_initDatabase();
 
   bool getPackage(const std::string& pkg);
+
+  std::vector<Dependency> getDependencies(const ::int64_t& packageId);
 };
 
 #endif  // __DATABASE_UTILS_HPP__
