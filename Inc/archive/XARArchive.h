@@ -1,13 +1,7 @@
 #ifndef XARARCHIVE_H
 #define XARARCHIVE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-#include <archive.h>
-#ifdef __cplusplus
-};
-#endif
+#include <xar.h>
 
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
