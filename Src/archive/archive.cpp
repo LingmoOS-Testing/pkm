@@ -9,8 +9,9 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <utility>
 
-namespace Archiver {
+extern "C" {
 int verbose = 0;
 
 static void extract(const char *filename, int do_extract, int flags) {
@@ -34,7 +35,7 @@ static void extract(const char *filename, int do_extract, int flags) {
    * Enabling bzip2 is more expensive because the libbz2 library
    * isn't very well factored.
    */
-  if (filename != nullptr && strcmp(filename, "-") == 0) filename = nullptr;
+  if (filename != NULL && strcmp(filename, "-") == 0) filename = NULL;
   if ((r = archive_read_open_filename(a, filename, 10240)))
     fail("archive_read_open_filename()", archive_error_string(a), r);
   for (;;) {
@@ -116,4 +117,40 @@ static void usage(void) {
   errmsg(m);
   exit(1);
 }
-}  // namespace Archiver
+}
+
+Archiver::Archiver(std::string  path) : m_filePath(std::move(path)){
+  m_archive = archive_read_new();
+  archive_read_support_filter_all(m_archive);
+  archive_read_support_format_all(m_archive);
+
+  m_openArchive();
+}
+
+Archiver::~Archiver() {
+  archive_read_free(m_archive);
+}
+
+void Archiver::m_getFilesInArchive() {
+  if (!m_isFileOpened)
+    m_openArchive();
+
+  m_fileLock.lock();
+  struct archive_entry *entry;
+
+  while (archive_read_next_header(m_archive, &entry) == ARCHIVE_OK) {
+    m_fileList.emplace_back(archive_entry_pathname(entry));
+    archive_read_data_skip(m_archive);  // Note 2
+  }
+
+  m_fileLock.unlock();
+}
+void Archiver::m_openArchive() {
+  m_fileLock.lock();
+  auto r = archive_read_open_filename(m_archive, m_filePath.c_str(), 10240);
+  if (r != ARCHIVE_OK) {
+    throw std::runtime_error("Failed to open archive!");
+  }
+  m_isFileOpened = true;
+  m_fileLock.unlock();
+}
