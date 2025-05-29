@@ -6,14 +6,14 @@
 
 #include <cstdint>
 
-int main() {
+int main1() {
   auto db = DatabaseUtils();
   // db.m_initDatabase();
   db.getPackage("test");
   return 0;
 }
 
-int main1() {
+int main() {
   PackageManager manager;
 
   // 子包定义
@@ -30,7 +30,8 @@ int main1() {
       PackageStatus::UNINSTALLED);
 
   Package Dep2("Dep2", "1.0.0",
-               {{"SubDep3", VersionCompareIdentifier::EQUAL, "3.0.0"}},
+               {{"SubDep1", VersionCompareIdentifier::GREATOR_OR_EQUAL, "1.0.0"},
+               {"Dep1", VersionCompareIdentifier::GREATOR_OR_EQUAL, "1.0.0"}},
                PackageStatus::UNINSTALLED);
 
   // 添加到包管理器
@@ -48,17 +49,15 @@ int main1() {
        {"Dep2", VersionCompareIdentifier::EQUAL, "1.0.0"}},
       PackageStatus::TOINSTALL);
 
-  auto pkgInstList = std::make_shared<std::vector<Package>>();
+  auto pkgInstList = std::make_shared<std::map<std::string, Package>>();
   auto errorList = std::make_shared<std::vector<PackageError>>();
 
   if (manager.checkDependencies(MainApp, pkgInstList, errorList)) {
     std::cout << "Successfully resolved deps." << std::endl;
     std::cout << "Need to install following package(s):" << std::endl;
-    for (::int64_t i = pkgInstList->size() - 1; i >= 0; i--) {
-      auto p = pkgInstList->at(i);
-      std::cout << "  " << p.name << " " << p.version << std::endl;
+    for (const auto &it : *pkgInstList) {
+      std::cout << "  " << it.first << " " << it.second.version << std::endl;
     }
-
   } else {
     std::cout << "Unable to resolve deps" << std::endl;
     
@@ -77,7 +76,7 @@ int main1() {
                     << e.currentPackage.version << " depends on "
                     << e.wantedDependency.name << " "
                     << e.wantedDependency.version << " "
-                    << "but only" << e.currentDependency.name << " "
+                    << "but only " << e.currentDependency.name << " "
                     << e.currentDependency.version << " "
                     << "is installable." << std::endl;
           break;
@@ -86,7 +85,8 @@ int main1() {
                     << e.currentPackage.version << " depends on "
                     << e.wantedDependency.name << " "
                     << e.wantedDependency.version << " "
-                    << "that is not installable." << std::endl;
+                    << "but " << e.currentDependency.version << " "
+                    << "is planned to be installed by another package."<< std::endl;
           break;
         default:
           break;

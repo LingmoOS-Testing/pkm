@@ -26,10 +26,11 @@ void PackageManager::addlocalInstalledPackage(const Package& pkg) {
 }
 
 bool PackageManager::checkDependencies(
-    const Package& pkg, std::shared_ptr<std::vector<Package>> pkgInstallList,
+    const Package& pkg,
+    std::shared_ptr<std::map<std::string, Package>> pkgInstallList,
     std::shared_ptr<std::vector<PackageError>> errorLists) {
   if (!pkgInstallList) {
-    pkgInstallList = std::make_shared<std::vector<Package>>();
+    pkgInstallList = std::make_shared<std::map<std::string, Package>>();
   }
 
   if (!errorLists) {
@@ -48,8 +49,8 @@ bool PackageManager::checkDependencies(
       break;
 
     case PackageStatus::UNINSTALLED:
-      // If current dep is not install,
-      // we may want to test if it can be install <_<
+      // If current dep is not installed,
+      // we may want to test if it can be installed <_<
       temp_package.status = PackageStatus::TOINSTALL;
 
       resolved =
@@ -60,7 +61,7 @@ bool PackageManager::checkDependencies(
       m_checkPackageStatus(resolved, pkg, pkgInstallList, errorLists);
 
       if (resolved) {
-        pkgInstallList->emplace_back(pkg);
+        pkgInstallList->insert({pkg.name, pkg});
       }
       break;
   }
@@ -95,30 +96,49 @@ bool PackageManager::m_pkgVersionChecker(
         return false;
   }
 }
+
 void PackageManager::m_checkPackageStatus(
     bool& resolved, const Package& pkg,
-    const std::shared_ptr<std::vector<Package>>& pkgInstallList,
+    const std::shared_ptr<std::map<std::string, Package>> pkgInstallList,
     const std::shared_ptr<std::vector<PackageError>>& errorLists) {
   // Iterate through every required dependencies
   for (const auto& dep : pkg.dependencies) {
     // Checking the required package is in our local installed list
     if (packageInstalledList.count(dep.name) > 0) {
       // If we have the package installed locally
-      auto this_dep = packageInstalledList.at(dep.name);
       // Checking dependency version is available
-      if (m_pkgVersionChecker(this_dep.version, dep.version,
-                              dep.compare_id)) {
-        continue;  // Have required version install, continue.
+      if (auto this_dep = packageInstalledList.at(dep.name);
+        m_pkgVersionChecker(this_dep.version, dep.version,
+                            dep.compare_id)) {
+        continue; // Have required version install, continue.
       }
     }
+
+    // Check if the package is already analysed and added to the waiting list
+    if (pkgInstallList->count(dep.name) > 0) {
+      if (auto this_dep = pkgInstallList->at(dep.name);
+        m_pkgVersionChecker(this_dep.version, dep.version,
+                            dep.compare_id)) {
+        continue; // Have required version install, continue.
+      } else {
+        // The package is planned to be installed,
+        // but the current needed version is not available or conflict
+        // with the planned one
+        auto err = PackageError{pkg, dep, this_dep,
+                                  PackageError::ErrorType::DEPENDENCY_NOT_INSTALLABLE};
+        errorLists->emplace_back(err);
+        resolved = false;
+        return;
+      }
+    }
+
     // Otherwise, we need to check if we can install it
     if (packageCacheList.count(dep.name) > 0) {
       // Get the package information from cache
-      auto this_dep = packageCacheList.at(dep.name);
-
       // Checking dependency version is available
-      if (!m_pkgVersionChecker(this_dep.version, dep.version,
-                               dep.compare_id)) {
+      if (auto this_dep = packageCacheList.at(dep.name); !m_pkgVersionChecker(
+          this_dep.version, dep.version,
+          dep.compare_id)) {
         // If the package is not install and we don't have the required
         // version Raise error
         auto err = PackageError{pkg, dep, this_dep,
@@ -134,7 +154,7 @@ void PackageManager::m_checkPackageStatus(
           continue;
         } else {
           auto err = PackageError{pkg, dep, this_dep,
-                                PackageError::ErrorType::DEPENDENCY_NOT_INSTALLABLE};
+                                  PackageError::ErrorType::DEPENDENCY_NOT_INSTALLABLE};
           errorLists->emplace_back(err);
           resolved = false;
         }

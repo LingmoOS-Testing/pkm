@@ -20,5 +20,4 @@ target_link_libraries(pkm
   SQLiteCpp
   sqlite3
   pthread
-  dl
 )

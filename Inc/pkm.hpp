@@ -30,7 +30,7 @@ class PackageManager {
   
   bool checkDependencies(
       const Package& pkg,
-      std::shared_ptr<std::vector<Package>> pkgInstallList = nullptr,
+      std::shared_ptr<std::map<std::string, Package>> pkgInstallList = nullptr,
       std::shared_ptr<std::vector<PackageError>> errorLists = nullptr);
 
  private:
@@ -43,7 +43,7 @@ class PackageManager {
 
   void m_checkPackageStatus(
       bool& resolved, const Package& pkg,
-      const std::shared_ptr<std::vector<Package>>& pkgInstallList,
+      std::shared_ptr<std::map<std::string, Package>> pkgInstallList,
       const std::shared_ptr<std::vector<PackageError>>& errorLists);
 };
 
