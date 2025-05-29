@@ -10,20 +10,14 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 option(PKM_BUILD_TEST "Whether or not to enable test in the project" ON)
 
-include(FetchContent)
-FetchContent_Declare(
-        googletest
-        URL https://github.com/google/googletest/archive/refs/tags/v1.17.0.zip
-)
-
 # 添加第三方依赖包
 set(SQLITECPP_RUN_CPPLINT OFF)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/SQLiteCpp)
 
-# For Windows: Prevent overriding the parent project's compiler/linker settings
 if(PKM_BUILD_TEST)
+    # For Windows: Prevent overriding the parent project's compiler/linker settings
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(googletest)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/googletest)
     message(STATUS "cpkm: Test is enabled!")
 endif()
 
