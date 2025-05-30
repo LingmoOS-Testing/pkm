@@ -18,16 +18,13 @@ if(PKM_BUILD_TEST)
     # For Windows: Prevent overriding the parent project's compiler/linker settings
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/googletest)
-    message(STATUS "cpkm: Test is enabled!")
 endif()
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Inc)
+add_subdirectory(libcpm)
 
-file(GLOB_RECURSE SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/Src/*.cpp)
+add_subdirectory(cpm)
 
-add_executable(cpkm ${SRC_FILES})
-target_link_libraries(cpkm
-  SQLiteCpp
-  sqlite3
-  pthread
-)
+if(PKM_BUILD_TEST)
+    message(STATUS "cpkm: Test is enabled!")
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
+endif()
