@@ -8,7 +8,9 @@
 #include <gtest/gtest.h>
 
 #include "pkm.hpp"
+#include "version_utils.hpp"
 
+// Test dependency resolve
 TEST(cpkm_test, BasicDpendencyResolve) {
   PackageManager manager;
   // 子包定义
@@ -24,7 +26,7 @@ TEST(cpkm_test, BasicDpendencyResolve) {
       PackageStatus::UNINSTALLED);
   Package Dep2("Dep2", "1.0.0",
                {{"SubDep1", VersionCompareIdentifier::GREATOR_OR_EQUAL, "1.0.0"},
-               {"Dep1", VersionCompareIdentifier::GREATOR_OR_EQUAL, "1.0.0"}},
+                {"Dep1", VersionCompareIdentifier::GREATOR_OR_EQUAL, "1.0.0"}},
                PackageStatus::UNINSTALLED);
   // 添加到包管理器
   manager.addPackage(SubDep1);
@@ -42,5 +44,31 @@ TEST(cpkm_test, BasicDpendencyResolve) {
   auto pkgInstList = std::make_shared<std::map<std::string, Package>>();
   auto errorList = std::make_shared<std::vector<PackageError>>();
   // Expect equal.
-  EXPECT_EQ(manager.checkDependencies(MainApp, pkgInstList, errorList), true);
+  EXPECT_TRUE(manager.checkDependencies(MainApp, pkgInstList, errorList));
+}
+
+// Test package version compare
+TEST(cpkm_test, PackageVersionCompare) {
+  // Test simple version number
+  EXPECT_EQ(comparePkgVersion("1.0.0", "1.0.0"), VersionCompareIdentifier::EQUAL);
+  EXPECT_EQ(comparePkgVersion("1.0.0", "1.0.1"), VersionCompareIdentifier::SMALLER);
+  EXPECT_EQ(comparePkgVersion("1.0.0", "1.1.0"), VersionCompareIdentifier::SMALLER);
+  EXPECT_EQ(comparePkgVersion("1.0.0", "2.0.0"), VersionCompareIdentifier::SMALLER);
+
+  // Test version numbers that contains special characters
+  EXPECT_EQ(comparePkgVersion("1.0.0-alpha", "1.0.0-alpha"), VersionCompareIdentifier::EQUAL);
+  EXPECT_EQ(comparePkgVersion("1.0.0-alpha", "1.0.0-beta"), VersionCompareIdentifier::SMALLER);
+  EXPECT_EQ(comparePkgVersion("1.0.0-alpha", "1.0.0-alpha.1"), VersionCompareIdentifier::SMALLER);
+
+  // contain ~ . +
+  EXPECT_EQ(comparePkgVersion("1.0.0+1", "1.0.0"), VersionCompareIdentifier::GREATOR);
+  EXPECT_EQ(comparePkgVersion("1.0.0~1", "1.0.0"), VersionCompareIdentifier::SMALLER);
+  EXPECT_EQ(comparePkgVersion("1.0.0-1", "1.0.0"), VersionCompareIdentifier::GREATOR);
+  EXPECT_EQ(comparePkgVersion("1.0.0-1", "1.0.0~1"), VersionCompareIdentifier::GREATOR);
+
+  // Test other version number
+  EXPECT_EQ(comparePkgVersion("3", "3.14"), VersionCompareIdentifier::SMALLER);
+  EXPECT_EQ(comparePkgVersion("1.2.1", "a.1"), VersionCompareIdentifier::SMALLER);
+  EXPECT_EQ(comparePkgVersion("a.b.c", "a.b.d"), VersionCompareIdentifier::SMALLER);
+  EXPECT_EQ(comparePkgVersion("3-1", "3+1"), VersionCompareIdentifier::SMALLER);
 }

@@ -163,9 +163,9 @@ VersionCompareIdentifier comparePkgVersion(const std::string& pkg1,
     if (i >= pkg1_version_length) {
       if (pkg2_version[i] == VersionNumberPart("~")) {
         // This means that, pkg1 and pkg2 has same version string
-        // brfore index 1. However, if the longer one is ending
+        // before index 1. However, if the longer one is ending
         // with ~, it is always smaller than the shorter one that
-        // dose not have ~
+        // does not have ~
         return VersionCompareIdentifier::GREATOR;
       } else {
         return VersionCompareIdentifier::SMALLER;
