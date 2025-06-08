@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "log.h"
 #include "pkm.hpp"
 
 #include "database_utils.hpp"
@@ -14,6 +15,10 @@ int main1() {
 }
 
 int main() {
+#ifdef CPKM_ENABLE_DEBUG
+  log_set_level(LOG_DEBUG);
+#endif
+
   PackageManager manager;
 
   // 子包定义

@@ -1,6 +1,6 @@
 set(SRC_FILES "")
 
-file(GLOB_RECURSE SRC_FILES Src/*.cpp)
+file(GLOB_RECURSE SRC_FILES Src/*.cpp Src/*.c)
 
 add_library(cpkm_lib ${SRC_FILES} )
 target_include_directories(cpkm_lib

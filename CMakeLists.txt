@@ -9,6 +9,11 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 option(PKM_BUILD_TEST "Whether or not to enable test in the project" ON)
+option(PKM_ENABLE_DEBUG "Enable debug ouput." ON)
+
+if(PKM_ENABLE_DEBUG)
+    add_compile_definitions("-DCPKM_ENABLE_DEBUG")
+endif()
 
 # 添加第三方依赖包
 set(SQLITECPP_RUN_CPPLINT OFF)
