@@ -18,6 +18,7 @@
 #include <memory>
 
 #include "log.h"
+#include "package_utils.hpp"
 
 void PackageManager::addPackage(const Package& pkg) {
   packageCacheList.emplace(pkg.name, pkg);
@@ -32,6 +33,10 @@ bool PackageManager::checkDependencies(
     std::shared_ptr<std::map<std::string, Package>> pkgInstallList,
     std::shared_ptr<std::vector<PackageError>> errorLists) {
   log_debug("Checking package: %s", pkg.name.c_str());
+  log_debug("It has following dependencies:");
+  for (const Dependency & p : pkg.dependencies) {
+    log_debug("\t%s %s", p.name.c_str(), p.version.c_str());
+  }
 
   if (!pkgInstallList) {
     pkgInstallList = std::make_shared<std::map<std::string, Package>>();
