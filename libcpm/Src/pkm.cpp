@@ -43,12 +43,11 @@ bool PackageManager::checkDependencies(
 
   bool resolved = true;
 
-  auto temp_package = Package(pkg);
-
   // Check current package status
   switch (pkg.status) {
     case PackageStatus::INSTALLED:
-      // ToDo: Checking recursively
+      // ToDo: Checking recursively to test dependency, like wether the deps is missing 
+      // or we need to update them
       log_debug("Package \"%s\" installed, checking its deps status.", pkg.name.c_str());
       m_checkPackageStatus(resolved, pkg, pkgInstallList, errorLists);
       break;
@@ -57,10 +56,12 @@ bool PackageManager::checkDependencies(
       // If current dep is not installed,
       // we may want to test if it can be installed <_<
       log_debug("Package \"%s\" is not installed, checking if it can be inst.", pkg.name.c_str());
-      temp_package.status = PackageStatus::TOINSTALL;
+      m_checkPackageStatus(resolved, pkg, pkgInstallList, errorLists);
 
-      resolved =
-          this->checkDependencies(temp_package, pkgInstallList, errorLists);
+      if (resolved) {
+        log_debug("\tResolved, add %s into install list", pkg.name.c_str());
+        pkgInstallList->insert({pkg.name, pkg});
+      }
       break;
 
     case PackageStatus::TOINSTALL:
