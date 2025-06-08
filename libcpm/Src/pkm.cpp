@@ -36,8 +36,6 @@ bool PackageManager::checkDependencies(
   log_debug("Checking package: %s", pkg.name.c_str());
   log_debug("It has following dependencies:");
 
-  packageUnderChecking = &pkg;
-
   for (const Dependency& p : pkg.dependencies) {
     log_debug("\t%s %s", p.name.c_str(), p.version.c_str());
   }
@@ -45,10 +43,14 @@ bool PackageManager::checkDependencies(
   if (!pkgInstallList) {
     pkgInstallList = std::make_shared<std::list<Package>>();
   }
-
   if (!errorLists) {
     errorLists = std::make_shared<std::list<PackageError>>();
   }
+  if (!packageUnderChecking) {
+    packageUnderChecking = std::make_shared<std::list<Package>>();
+  }
+
+  packageUnderChecking->push_back(pkg);
 
   bool resolved = true;
 
@@ -86,6 +88,7 @@ bool PackageManager::checkDependencies(
       break;
   }
 
+  packageUnderChecking->remove(pkg);
   return resolved;
 }
 
@@ -125,14 +128,42 @@ void PackageManager::m_checkPackageStatus(
   for (const auto& dep : pkg.dependencies) {
     // Prevent recursive searching
     if (pkg.name == dep.name) {
-      log_error("The required package: %s is being requied recursively!", dep.name.c_str());
+      log_error("The required package: %s is being required recursively!",
+                dep.name.c_str());
       auto err =
           PackageError{pkg, dep, pkg,
-                        PackageError::ErrorType::DEPENDENCY_CIRCULAR_REFERENCE};
+                       PackageError::ErrorType::DEPENDENCY_CIRCULAR_REFERENCE};
       errorLists->emplace_back(err);
       resolved = false;
       continue;
     }
+
+    // Check if this dependency is in the checking chain
+    auto find_deps_in_chain =
+        std::find_if(packageUnderChecking->cbegin(),
+                     packageUnderChecking->cend(), [&dep](const Package& pkg) {
+                       if (pkg.name == dep.name)
+                         return true;
+                       else
+                         return false;
+                     });
+    if (find_deps_in_chain->name == dep.name) {
+      if (m_pkgVersionChecker(find_deps_in_chain->version, dep.version,
+                              dep.compare_id)) {
+        log_warn(
+            "\t\tPackage %s is circularlly referenced by %s. This may "
+            "cause error!",
+            dep.name.c_str(), pkg.name.c_str());
+        continue;  // If the requirements are the same, we can still continue.
+      } else {
+        auto err =
+            PackageError{pkg, dep, *find_deps_in_chain,
+                         PackageError::ErrorType::DEPENDENCY_NOT_INSTALLABLE};
+        errorLists->emplace_back(err);
+        resolved = false;
+      }
+    }
+
     // Checking the required package is in our local installed list
     if (packageInstalledList.count(dep.name) > 0) {
       // If we have the package installed locally
@@ -152,8 +183,8 @@ void PackageManager::m_checkPackageStatus(
                                return false;
                            });
     if (it->name == dep.name) {
-      if (auto dep_in_inst_list = Package(*it);
-          m_pkgVersionChecker(dep_in_inst_list.version, dep.version, dep.compare_id)) {
+      if (auto dep_in_inst_list = Package(*it); m_pkgVersionChecker(
+              dep_in_inst_list.version, dep.version, dep.compare_id)) {
         log_debug("\t\tPackage %s already resolved", dep.name.c_str());
         continue;  // Have required version install, continue.
       } else {
@@ -174,7 +205,8 @@ void PackageManager::m_checkPackageStatus(
       // Get the package information from cache
       // Checking dependency version is available
       if (auto dep_in_cache_list = packageCacheList.at(dep.name);
-          !m_pkgVersionChecker(dep_in_cache_list.version, dep.version, dep.compare_id)) {
+          !m_pkgVersionChecker(dep_in_cache_list.version, dep.version,
+                               dep.compare_id)) {
         // If the package is not install and we don't have the required
         // version Raise error
         auto err = PackageError{pkg, dep, dep_in_cache_list,
@@ -185,9 +217,9 @@ void PackageManager::m_checkPackageStatus(
       } else {
         // Otherwise, we need to check the dependency of this package
         // recursively
-        if (this->checkDependencies(dep_in_cache_list, pkgInstallList, errorLists)) {
+        if (this->checkDependencies(dep_in_cache_list, pkgInstallList,
+                                    errorLists)) {
           // If the sub-dependency is resolved, we can continue
-          packageUnderChecking = &pkg;
           continue;
         } else {
           auto err =

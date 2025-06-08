@@ -29,3 +29,10 @@ Package::Package(
       version(version),
       dependencies(dependencies),
       status(status) {}
+
+bool Package::operator==(const Package &other) const {
+  if (this->name == other.name)
+    return true;
+  else
+    return false;
+}

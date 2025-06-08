@@ -30,13 +30,13 @@ int main() {
       "Dep1", "1.0.0-1",
       {{"SubDep1", VersionCompareIdentifier::GREATOR_OR_EQUAL, "2.0.0~test"},
        {"SubDep2", VersionCompareIdentifier::SMALLER, "2.0.0"},
-       {"Dep1", VersionCompareIdentifier::GREATOR_OR_EQUAL, "1.0.0"}},
+       {"Dep2", VersionCompareIdentifier::GREATOR_OR_EQUAL, "1.0.0"}},
       PackageStatus::UNINSTALLED);
 
   Package Dep2(
       "Dep2", "1.0.0",
       {{"SubDep1", VersionCompareIdentifier::GREATOR_OR_EQUAL, "1.0.0"},
-       {"Dep1", VersionCompareIdentifier::GREATOR_OR_EQUAL, "1.0.0"}},
+       {"Dep1", VersionCompareIdentifier::SMALLER, "1.0.0"}},
       PackageStatus::UNINSTALLED);
 
   // 添加到包管理器
@@ -67,18 +67,19 @@ int main() {
     std::cout << "Unable to resolve deps" << std::endl;
 
     for (auto i = errorList->cend(); i != errorList->cbegin(); i--) {
+      auto pkg_comparator = getReadableStringFromVersionCompareIdentifier(i->wantedDependency.compare_id);
       switch (i->errorType) {
         case PackageError::ErrorType::DEPENDENCY_NOT_FOUND:
           std::cout << "  " << i->currentPackage.name << " "
                     << i->currentPackage.version << " depends on "
-                    << i->wantedDependency.name << " "
+                    << i->wantedDependency.name << " " << pkg_comparator << " "
                     << i->wantedDependency.version << " "
                     << "that is not found." << std::endl;
           break;
         case PackageError::ErrorType::DEPENDENCY_NOT_MATCH:
           std::cout << "  " << i->currentPackage.name << " "
                     << i->currentPackage.version << " depends on "
-                    << i->wantedDependency.name << " "
+                    << i->wantedDependency.name << " " << pkg_comparator << " "
                     << i->wantedDependency.version << " "
                     << "but only " << i->currentDependency.name << " "
                     << i->currentDependency.version << " "
@@ -87,7 +88,7 @@ int main() {
         case PackageError::ErrorType::DEPENDENCY_NOT_INSTALLABLE:
           std::cout << "  " << i->currentPackage.name << " "
                     << i->currentPackage.version << " depends on "
-                    << i->wantedDependency.name << " "
+                    << i->wantedDependency.name << " " << pkg_comparator << " "
                     << i->wantedDependency.version << " "
                     << "but " << i->currentDependency.version << " "
                     << "is not installable"
@@ -96,7 +97,7 @@ int main() {
         case PackageError::ErrorType::DEPENDENCY_CIRCULAR_REFERENCE:
           std::cout << "  " << i->currentPackage.name << " "
           << i->currentPackage.version << " depends on "
-          << i->wantedDependency.name << " "
+          << i->wantedDependency.name << " " << pkg_comparator << " "
           << i->wantedDependency.version << " "
           << "that is not acceptable (recursive dependency)"
           << std::endl;

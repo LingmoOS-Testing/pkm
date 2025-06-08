@@ -33,6 +33,11 @@ enum class VersionCompareIdentifier {
 };
 
 /**
+ * @Description: Get human readable string for enum class VersionCompareIdentifier
+ */
+std::string getReadableStringFromVersionCompareIdentifier(const VersionCompareIdentifier& id);
+
+/**
  * @Name: comparePkgVersion
  * @Description: Compare two packages' version string.
  *
