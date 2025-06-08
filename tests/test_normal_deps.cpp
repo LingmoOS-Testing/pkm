@@ -41,8 +41,8 @@ TEST(cpkm_test, BasicDpendencyResolve) {
       {{"Dep1", VersionCompareIdentifier::GREATOR_OR_EQUAL, "1.0.0"},
        {"Dep2", VersionCompareIdentifier::EQUAL, "1.0.0"}},
       PackageStatus::TOINSTALL);
-  auto pkgInstList = std::make_shared<std::map<std::string, Package>>();
-  auto errorList = std::make_shared<std::vector<PackageError>>();
+  auto pkgInstList = std::make_shared<std::list<Package>>();
+  auto errorList = std::make_shared<std::list<PackageError>>();
   // Expect equal.
   EXPECT_TRUE(manager.checkDependencies(MainApp, pkgInstList, errorList));
 }

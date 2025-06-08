@@ -13,7 +13,9 @@
 
 #include "pkm.hpp"
 
+#include <algorithm>
 #include <cctype>
+#include <cfloat>
 #include <cstdio>
 #include <memory>
 
@@ -29,21 +31,20 @@ void PackageManager::addlocalInstalledPackage(const Package& pkg) {
 }
 
 bool PackageManager::checkDependencies(
-    const Package& pkg,
-    std::shared_ptr<std::map<std::string, Package>> pkgInstallList,
-    std::shared_ptr<std::vector<PackageError>> errorLists) {
+    const Package& pkg, std::shared_ptr<std::list<Package>> pkgInstallList,
+    std::shared_ptr<std::list<PackageError>> errorLists) {
   log_debug("Checking package: %s", pkg.name.c_str());
   log_debug("It has following dependencies:");
-  for (const Dependency & p : pkg.dependencies) {
+  for (const Dependency& p : pkg.dependencies) {
     log_debug("\t%s %s", p.name.c_str(), p.version.c_str());
   }
 
   if (!pkgInstallList) {
-    pkgInstallList = std::make_shared<std::map<std::string, Package>>();
+    pkgInstallList = std::make_shared<std::list<Package>>();
   }
 
   if (!errorLists) {
-    errorLists = std::make_shared<std::vector<PackageError>>();
+    errorLists = std::make_shared<std::list<PackageError>>();
   }
 
   bool resolved = true;
@@ -51,31 +52,33 @@ bool PackageManager::checkDependencies(
   // Check current package status
   switch (pkg.status) {
     case PackageStatus::INSTALLED:
-      // ToDo: Checking recursively to test dependency, like wether the deps is missing 
-      // or we need to update them
-      log_debug("Package \"%s\" installed, checking its deps status.", pkg.name.c_str());
+      // ToDo: Checking recursively to test dependency, like wether the deps is
+      // missing or we need to update them
+      log_debug("Package \"%s\" installed, checking its deps status.",
+                pkg.name.c_str());
       m_checkPackageStatus(resolved, pkg, pkgInstallList, errorLists);
       break;
 
     case PackageStatus::UNINSTALLED:
       // If current dep is not installed,
       // we may want to test if it can be installed <_<
-      log_debug("Package \"%s\" is not installed, checking if it can be inst.", pkg.name.c_str());
+      log_debug("Package \"%s\" is not installed, checking if it can be inst.",
+                pkg.name.c_str());
       m_checkPackageStatus(resolved, pkg, pkgInstallList, errorLists);
 
       if (resolved) {
         log_debug("\tResolved, add %s into install list", pkg.name.c_str());
-        pkgInstallList->insert({pkg.name, pkg});
+        pkgInstallList->push_back(pkg);
       }
       break;
 
     case PackageStatus::TOINSTALL:
-     log_debug("Requested to install Package \"%s\".", pkg.name.c_str());
+      log_debug("Requested to install Package \"%s\".", pkg.name.c_str());
       m_checkPackageStatus(resolved, pkg, pkgInstallList, errorLists);
 
       if (resolved) {
         log_debug("\tResolved, add %s into install list", pkg.name.c_str());
-        pkgInstallList->insert({pkg.name, pkg});
+        pkgInstallList->push_back(pkg);
       }
       break;
   }
@@ -113,8 +116,8 @@ bool PackageManager::m_pkgVersionChecker(
 
 void PackageManager::m_checkPackageStatus(
     bool& resolved, const Package& pkg,
-    const std::shared_ptr<std::map<std::string, Package>> pkgInstallList,
-    const std::shared_ptr<std::vector<PackageError>>& errorLists) {
+    std::shared_ptr<std::list<Package>> pkgInstallList,
+    std::shared_ptr<std::list<PackageError>> errorLists) {
   // Iterate through every required dependencies
   for (const auto& dep : pkg.dependencies) {
     // Checking the required package is in our local installed list
@@ -128,8 +131,15 @@ void PackageManager::m_checkPackageStatus(
     }
 
     // Check if the package is already analysed and added to the waiting list
-    if (pkgInstallList->count(dep.name) > 0) {
-      if (auto this_dep = pkgInstallList->at(dep.name);
+    auto it = std::find_if(pkgInstallList->cbegin(), pkgInstallList->cend(),
+                           [&dep](const Package& pkg) {
+                             if (pkg.name == dep.name)
+                               return true;
+                             else
+                               return false;
+                           });
+    if (it->name == dep.name) {
+      if (auto this_dep = Package(*it);
           m_pkgVersionChecker(this_dep.version, dep.version, dep.compare_id)) {
         continue;  // Have required version install, continue.
       } else {

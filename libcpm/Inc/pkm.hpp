@@ -17,8 +17,7 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <tuple>
-#include <vector>
+#include <list>
 
 #include "package_utils.hpp"
 
@@ -30,8 +29,8 @@ class PackageManager {
   
   bool checkDependencies(
       const Package& pkg,
-      std::shared_ptr<std::map<std::string, Package>> pkgInstallList = nullptr,
-      std::shared_ptr<std::vector<PackageError>> errorLists = nullptr);
+      std::shared_ptr<std::list<Package>> pkgInstallList = nullptr,
+      std::shared_ptr<std::list<PackageError>> errorLists = nullptr);
 
  private:
   std::map<std::string, Package> packageCacheList;
@@ -43,8 +42,8 @@ class PackageManager {
 
   void m_checkPackageStatus(
       bool& resolved, const Package& pkg,
-      std::shared_ptr<std::map<std::string, Package>> pkgInstallList,
-      const std::shared_ptr<std::vector<PackageError>>& errorLists);
+      std::shared_ptr<std::list<Package>> pkgInstallList,
+      std::shared_ptr<std::list<PackageError>> errorLists);
 };
 
 #endif  //__PKM_H__
