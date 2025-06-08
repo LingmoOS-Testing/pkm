@@ -1,11 +1,9 @@
+#include <cstdint>
 #include <iostream>
 
+#include "database_utils.hpp"
 #include "log.h"
 #include "pkm.hpp"
-
-#include "database_utils.hpp"
-
-#include <cstdint>
 
 int main1() {
   auto db = DatabaseUtils();
@@ -31,13 +29,15 @@ int main() {
   Package Dep1(
       "Dep1", "1.0.0-1",
       {{"SubDep1", VersionCompareIdentifier::GREATOR_OR_EQUAL, "2.0.0~test"},
-       {"SubDep2", VersionCompareIdentifier::SMALLER, "2.0.0"}},
+       {"SubDep2", VersionCompareIdentifier::SMALLER, "2.0.0"},
+       {"Dep1", VersionCompareIdentifier::GREATOR_OR_EQUAL, "1.0.0"}},
       PackageStatus::UNINSTALLED);
 
-  Package Dep2("Dep2", "1.0.0",
-               {{"SubDep1", VersionCompareIdentifier::GREATOR_OR_EQUAL, "1.0.0"},
-               {"Dep1", VersionCompareIdentifier::GREATOR_OR_EQUAL, "1.0.0"}},
-               PackageStatus::UNINSTALLED);
+  Package Dep2(
+      "Dep2", "1.0.0",
+      {{"SubDep1", VersionCompareIdentifier::GREATOR_OR_EQUAL, "1.0.0"},
+       {"Dep1", VersionCompareIdentifier::GREATOR_OR_EQUAL, "1.0.0"}},
+      PackageStatus::UNINSTALLED);
 
   // 添加到包管理器
   manager.addPackage(SubDep1);
@@ -65,7 +65,7 @@ int main() {
     }
   } else {
     std::cout << "Unable to resolve deps" << std::endl;
-    
+
     for (auto i = errorList->cend(); i != errorList->cbegin(); i--) {
       switch (i->errorType) {
         case PackageError::ErrorType::DEPENDENCY_NOT_FOUND:
@@ -90,7 +90,16 @@ int main() {
                     << i->wantedDependency.name << " "
                     << i->wantedDependency.version << " "
                     << "but " << i->currentDependency.version << " "
-                    << "is planned to be installed by another package."<< std::endl;
+                    << "is not installable"
+                    << std::endl;
+          break;
+        case PackageError::ErrorType::DEPENDENCY_CIRCULAR_REFERENCE:
+          std::cout << "  " << i->currentPackage.name << " "
+          << i->currentPackage.version << " depends on "
+          << i->wantedDependency.name << " "
+          << i->wantedDependency.version << " "
+          << "that is not acceptable (recursive dependency)"
+          << std::endl;
           break;
         default:
           break;

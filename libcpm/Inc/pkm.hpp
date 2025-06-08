@@ -23,6 +23,9 @@
 
 class PackageManager {
  public:
+  PackageManager() = default;
+  ~PackageManager() = default;
+
   void addPackage(const Package& pkg);
   //For test only
   void addlocalInstalledPackage(const Package& pkg);
@@ -36,6 +39,9 @@ class PackageManager {
   std::map<std::string, Package> packageCacheList;
 
   std::map<std::string, Package> packageInstalledList;
+
+  // This stores the package that is currently been checked
+  const Package* packageUnderChecking;
 
   bool m_pkgVersionChecker(const std::string& pkg1, const std::string& pkg2,
                            const VersionCompareIdentifier& compare_identifier);
