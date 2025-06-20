@@ -13,9 +13,14 @@
 
 #include "pkm.hpp"
 
+#include <algorithm>
 #include <cctype>
+#include <cfloat>
 #include <cstdio>
 #include <memory>
+
+#include "log.h"
+#include "package_utils.hpp"
 
 void PackageManager::addPackage(const Package& pkg) {
   packageCacheList.emplace(pkg.name, pkg);
@@ -26,46 +31,64 @@ void PackageManager::addlocalInstalledPackage(const Package& pkg) {
 }
 
 bool PackageManager::checkDependencies(
-    const Package& pkg,
-    std::shared_ptr<std::map<std::string, Package>> pkgInstallList,
-    std::shared_ptr<std::vector<PackageError>> errorLists) {
-  if (!pkgInstallList) {
-    pkgInstallList = std::make_shared<std::map<std::string, Package>>();
+    const Package& pkg, std::shared_ptr<std::list<Package>> pkgInstallList,
+    std::shared_ptr<std::list<PackageError>> errorLists) {
+  log_debug("Checking package: %s", pkg.name.c_str());
+  log_debug("It has following dependencies:");
+
+  for (const Dependency& p : pkg.dependencies) {
+    log_debug("\t%s %s", p.name.c_str(), p.version.c_str());
   }
 
-  if (!errorLists) {
-    errorLists = std::make_shared<std::vector<PackageError>>();
+  if (!pkgInstallList) {
+    pkgInstallList = std::make_shared<std::list<Package>>();
   }
+  if (!errorLists) {
+    errorLists = std::make_shared<std::list<PackageError>>();
+  }
+  if (!packageUnderChecking) {
+    packageUnderChecking = std::make_shared<std::list<Package>>();
+  }
+
+  packageUnderChecking->push_back(pkg);
 
   bool resolved = true;
-
-  auto temp_package = Package(pkg);
 
   // Check current package status
   switch (pkg.status) {
     case PackageStatus::INSTALLED:
-      // ToDo: Checking recursively
+      // ToDo: Checking recursively to test dependency, like wether the deps is
+      // missing or we need to update them
+      log_debug("Package \"%s\" installed, checking its deps status.",
+                pkg.name.c_str());
       m_checkPackageStatus(resolved, pkg, pkgInstallList, errorLists);
       break;
 
     case PackageStatus::UNINSTALLED:
       // If current dep is not installed,
       // we may want to test if it can be installed <_<
-      temp_package.status = PackageStatus::TOINSTALL;
-
-      resolved =
-          this->checkDependencies(temp_package, pkgInstallList, errorLists);
-      break;
-
-    case PackageStatus::TOINSTALL:
+      log_debug("Package \"%s\" is not installed, checking if it can be inst.",
+                pkg.name.c_str());
       m_checkPackageStatus(resolved, pkg, pkgInstallList, errorLists);
 
       if (resolved) {
-        pkgInstallList->insert({pkg.name, pkg});
+        log_debug("\tResolved, add %s into install list", pkg.name.c_str());
+        pkgInstallList->push_back(pkg);
+      }
+      break;
+
+    case PackageStatus::TOINSTALL:
+      log_debug("Requested to install Package \"%s\".", pkg.name.c_str());
+      m_checkPackageStatus(resolved, pkg, pkgInstallList, errorLists);
+
+      if (resolved) {
+        log_debug("\tResolved, add %s into install list", pkg.name.c_str());
+        pkgInstallList->push_back(pkg);
       }
       break;
   }
 
+  packageUnderChecking->remove(pkg);
   return resolved;
 }
 
@@ -99,33 +122,78 @@ bool PackageManager::m_pkgVersionChecker(
 
 void PackageManager::m_checkPackageStatus(
     bool& resolved, const Package& pkg,
-    const std::shared_ptr<std::map<std::string, Package>> pkgInstallList,
-    const std::shared_ptr<std::vector<PackageError>>& errorLists) {
+    std::shared_ptr<std::list<Package>> pkgInstallList,
+    std::shared_ptr<std::list<PackageError>> errorLists) {
   // Iterate through every required dependencies
   for (const auto& dep : pkg.dependencies) {
+    // Prevent recursive searching
+    if (pkg.name == dep.name) {
+      log_error("The required package: %s is being required recursively!",
+                dep.name.c_str());
+      auto err =
+          PackageError{pkg, dep, pkg,
+                       PackageError::ErrorType::DEPENDENCY_CIRCULAR_REFERENCE};
+      errorLists->emplace_back(err);
+      resolved = false;
+      continue;
+    }
+
+    // Check if this dependency is in the checking chain
+    auto find_deps_in_chain =
+        std::find_if(packageUnderChecking->cbegin(),
+                     packageUnderChecking->cend(), [&dep](const Package& pkg) {
+                       if (pkg.name == dep.name)
+                         return true;
+                       else
+                         return false;
+                     });
+    if (find_deps_in_chain->name == dep.name) {
+      if (m_pkgVersionChecker(find_deps_in_chain->version, dep.version,
+                              dep.compare_id)) {
+        log_warn(
+            "\t\tPackage %s is circularlly referenced by %s. This may "
+            "cause error!",
+            dep.name.c_str(), pkg.name.c_str());
+        continue;  // If the requirements are the same, we can still continue.
+      } else {
+        auto err =
+            PackageError{pkg, dep, *find_deps_in_chain,
+                         PackageError::ErrorType::DEPENDENCY_NOT_INSTALLABLE};
+        errorLists->emplace_back(err);
+        resolved = false;
+      }
+    }
+
     // Checking the required package is in our local installed list
     if (packageInstalledList.count(dep.name) > 0) {
       // If we have the package installed locally
       // Checking dependency version is available
       if (auto this_dep = packageInstalledList.at(dep.name);
-        m_pkgVersionChecker(this_dep.version, dep.version,
-                            dep.compare_id)) {
-        continue; // Have required version install, continue.
+          m_pkgVersionChecker(this_dep.version, dep.version, dep.compare_id)) {
+        continue;  // Have required version install, continue.
       }
     }
 
     // Check if the package is already analysed and added to the waiting list
-    if (pkgInstallList->count(dep.name) > 0) {
-      if (auto this_dep = pkgInstallList->at(dep.name);
-        m_pkgVersionChecker(this_dep.version, dep.version,
-                            dep.compare_id)) {
-        continue; // Have required version install, continue.
+    auto it = std::find_if(pkgInstallList->cbegin(), pkgInstallList->cend(),
+                           [&dep](const Package& pkg) {
+                             if (pkg.name == dep.name)
+                               return true;
+                             else
+                               return false;
+                           });
+    if (it->name == dep.name) {
+      if (auto dep_in_inst_list = Package(*it); m_pkgVersionChecker(
+              dep_in_inst_list.version, dep.version, dep.compare_id)) {
+        log_debug("\t\tPackage %s already resolved", dep.name.c_str());
+        continue;  // Have required version install, continue.
       } else {
         // The package is planned to be installed,
         // but the current needed version is not available or conflict
         // with the planned one
-        auto err = PackageError{pkg, dep, this_dep,
-                                  PackageError::ErrorType::DEPENDENCY_NOT_INSTALLABLE};
+        auto err =
+            PackageError{pkg, dep, dep_in_inst_list,
+                         PackageError::ErrorType::DEPENDENCY_NOT_INSTALLABLE};
         errorLists->emplace_back(err);
         resolved = false;
         return;
@@ -136,12 +204,12 @@ void PackageManager::m_checkPackageStatus(
     if (packageCacheList.count(dep.name) > 0) {
       // Get the package information from cache
       // Checking dependency version is available
-      if (auto this_dep = packageCacheList.at(dep.name); !m_pkgVersionChecker(
-          this_dep.version, dep.version,
-          dep.compare_id)) {
+      if (auto dep_in_cache_list = packageCacheList.at(dep.name);
+          !m_pkgVersionChecker(dep_in_cache_list.version, dep.version,
+                               dep.compare_id)) {
         // If the package is not install and we don't have the required
         // version Raise error
-        auto err = PackageError{pkg, dep, this_dep,
+        auto err = PackageError{pkg, dep, dep_in_cache_list,
                                 PackageError::ErrorType::DEPENDENCY_NOT_MATCH};
         errorLists->emplace_back(err);
         resolved = false;
@@ -149,12 +217,14 @@ void PackageManager::m_checkPackageStatus(
       } else {
         // Otherwise, we need to check the dependency of this package
         // recursively
-        if (this->checkDependencies(this_dep, pkgInstallList, errorLists)) {
+        if (this->checkDependencies(dep_in_cache_list, pkgInstallList,
+                                    errorLists)) {
           // If the sub-dependency is resolved, we can continue
           continue;
         } else {
-          auto err = PackageError{pkg, dep, this_dep,
-                                  PackageError::ErrorType::DEPENDENCY_NOT_INSTALLABLE};
+          auto err =
+              PackageError{pkg, dep, dep_in_cache_list,
+                           PackageError::ErrorType::DEPENDENCY_NOT_INSTALLABLE};
           errorLists->emplace_back(err);
           resolved = false;
         }

@@ -188,3 +188,22 @@ VersionCompareIdentifier comparePkgVersion(const std::string& pkg1,
 
   return VersionCompareIdentifier::UNKNOWN;
 }
+
+std::string getReadableStringFromVersionCompareIdentifier(const VersionCompareIdentifier& id) {
+  switch (id){
+    case VersionCompareIdentifier::EQUAL:
+      return "=";
+    case VersionCompareIdentifier::SMALLER:
+      return "<";
+    case VersionCompareIdentifier::GREATOR:
+      return ">";
+    case VersionCompareIdentifier::UNKNOWN:
+      return "?";
+    case VersionCompareIdentifier::GREATOR_OR_EQUAL:
+      return ">=";
+    case VersionCompareIdentifier::SMALLER_OR_EQUAL:
+      return "<=";
+      break;
+  }
+  return "?";
+}

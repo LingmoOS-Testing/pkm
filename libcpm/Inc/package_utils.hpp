@@ -64,6 +64,8 @@ struct Package {
   Package(std::string name, std::string version,
           std::vector<Dependency> dependencies,
           PackageStatus status = PackageStatus::UNINSTALLED);
+
+  bool operator==(const Package &other) const;
 };
 
 class PackageError {
