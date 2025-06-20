@@ -10,4 +10,5 @@ target_link_libraries(cpkm_lib
         SQLiteCpp
         sqlite3
         pthread
+        nlohmann_json::nlohmann_json
 )
