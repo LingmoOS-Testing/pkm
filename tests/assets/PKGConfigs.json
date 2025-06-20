@@ -1,0 +1,43 @@
+{
+  "project": "name",
+  "version": "1.0.0",
+  "builder": {
+    "type": "cmake",
+    "version": "3.10.0",
+    "cmakeMinimumRequired": "2.8.12",
+    "c_flags": "",
+    "cxx_flags": "",
+    "ld_flags": "",
+    "cxx_standard": "17",
+    "c_standard": "11"
+  },
+  "includes": [
+    "include/*"
+  ],
+  "targets": [
+    {
+      "name": "MyApp",
+      "type": "executable",
+      "sources": [
+        "Sources/*"
+      ],
+      "includes": [
+        "include_p/*"
+      ]
+    }
+  ],
+  "dependencies": {
+    "foo": "1.0.0 - 2.9999.9999",
+    "bar": ">=1.0.2 <2.1.2",
+    "baz": ">1.0.2 <=2.3.4",
+    "boo": "2.0.1",
+    "qux": "<1.0.0 || >=2.3.1 <2.4.5 || >=2.5.2 <3.0.0",
+    "asd": "http://asdf.com/asdf.tar.gz",
+    "til": "~1.2",
+    "elf": "~1.2.3",
+    "two": "2.x",
+    "thr": "3.3.x",
+    "lat": "latest",
+    "dyl": "file:../dyl"
+  }
+}
