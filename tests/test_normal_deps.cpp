@@ -11,7 +11,7 @@
 #include "version_utils.hpp"
 
 // Test dependency resolve
-TEST(cpkm_test, BasicDpendencyResolve) {
+TEST(cpkm_test_dependency, BasicDpendencyResolve) {
   PackageManager manager;
   // 子包定义
   Package SubDep1("SubDep1", "2.0.0", {}, PackageStatus::UNINSTALLED);
@@ -48,7 +48,7 @@ TEST(cpkm_test, BasicDpendencyResolve) {
 }
 
 // Test package version compare
-TEST(cpkm_test, PackageVersionCompare) {
+TEST(cpkm_test_dependency, PackageVersionCompare) {
   // Test simple version number
   EXPECT_EQ(comparePkgVersion("1.0.0", "1.0.0"), VersionCompareIdentifier::EQUAL);
   EXPECT_EQ(comparePkgVersion("1.0.0", "1.0.1"), VersionCompareIdentifier::SMALLER);

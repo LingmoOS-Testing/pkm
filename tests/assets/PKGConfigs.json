@@ -1,13 +1,13 @@
 {
-  "project": "name",
+  "project": "cpkm_test_project",
   "version": "1.0.0",
   "builder": {
     "type": "cmake",
     "version": "3.10.0",
     "cmakeMinimumRequired": "2.8.12",
-    "c_flags": "",
-    "cxx_flags": "",
-    "ld_flags": "",
+    "c_flags": "-Wall",
+    "cxx_flags": "-Wall",
+    "ld_flags": "-L/opt/mysql/lib",
     "cxx_standard": "17",
     "c_standard": "11"
   },
