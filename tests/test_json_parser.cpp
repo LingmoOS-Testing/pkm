@@ -9,10 +9,10 @@
 #include <fstream>
 #include <gtest/gtest.h>
 
-#include "package_json.h"
+#include "config_json.h"
 #include "nlohmann/json.hpp"
 
-using namespace cpkm::config;
+using namespace cpkm::json::config;
 
 TEST(cpkm_test_json, JSONToNativeTest) {
   std::string file_dir = std::string(CPKM_TEST_DIR) + std::string("/assets/PKGConfigs.json");
@@ -20,7 +20,7 @@ TEST(cpkm_test_json, JSONToNativeTest) {
   ASSERT_TRUE(f.is_open());
 
   nlohmann::json data = nlohmann::json::parse(f);
-  package_config<builder::cmake> p = data.get<package_config<builder::cmake>>();
+  PackageConfig<builder::cmake> p = data.get<PackageConfig<builder::cmake>>();
   ASSERT_EQ(p.projectName, std::string("cpkm_test_project"));
   ASSERT_EQ(p.version, std::string("1.0.0"));
   ASSERT_EQ(p.builder.type, std::string("cmake"));
@@ -43,4 +43,22 @@ TEST(cpkm_test_json, JSONToNativeTest) {
   ASSERT_EQ(p.dependencies.size(), 12);
   ASSERT_EQ(p.dependencies.at("foo"), std::string("1.0.0 - 2.9999.9999"));
   ASSERT_EQ(p.dependencies.at("bar"), std::string(">=1.0.2 <2.1.2"));
+}
+
+TEST(cpkm_test_json, NativeToJSONTest) {
+  std::string file_dir = std::string(CPKM_TEST_DIR) + std::string("/assets/PKGConfigs.json");
+  std::ifstream f(file_dir);
+  ASSERT_TRUE(f.is_open());
+
+  nlohmann::json data = nlohmann::json::parse(f);
+  PackageConfig<builder::cmake> p = data.get<PackageConfig<builder::cmake>>();
+
+  // convert back to json
+  nlohmann::json j = p;
+  ASSERT_EQ(j.at("project"), data.at("project"));
+  ASSERT_EQ(j.at("builder"), data.at("builder"));
+  ASSERT_EQ(j.at("version"), data.at("version"));
+  ASSERT_EQ(j.at("targets"), data.at("targets"));
+  ASSERT_EQ(j.at("dependencies"), data.at("dependencies"));
+  ASSERT_EQ(j.at("includes"), data.at("includes"));
 }
