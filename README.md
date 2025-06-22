@@ -1,4 +1,5 @@
 > **注意**：这是一个虚构的 README 示例，实际项目可能需要根据具体需求调整内容。
+
 # 🚀 **cpkm** - C/C++ 的包管理利器
 
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/your-repo/cpkm/build.yml?branch=main) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/your-repo/cpkm) ![License](https://img.shields.io/github/license/your-repo/cpkm)
@@ -20,13 +21,13 @@
 
 ## 📦 **功能一览**
 
-| 功能                   | 描述                                                                 |
-|------------------------|----------------------------------------------------------------------|
-| 包安装与更新           | 使用简单的命令即可安装或更新依赖库。                                |
-| 依赖版本锁定           | 支持 `cpkm.lock` 文件，确保项目在不同环境中的一致性。               |
-| 多源支持               | 可以从多个镜像源下载包，提升下载速度。                              |
-| 自定义构建选项         | 提供灵活的构建选项，满足不同项目的个性化需求。                      |
-| 离线模式               | 支持离线环境下的包管理，适合受限网络环境。                          |
+| 功能      | 描述                                |
+|---------|-----------------------------------|
+| 包安装与更新  | 使用简单的命令即可安装或更新依赖库。                |
+| 依赖版本锁定  | 支持 `cpkm.lock` 文件，确保项目在不同环境中的一致性。 |
+| 多源支持    | 可以从多个镜像源下载包，提升下载速度。               |
+| 自定义构建选项 | 提供灵活的构建选项，满足不同项目的个性化需求。           |
+| 离线模式    | 支持离线环境下的包管理，适合受限网络环境。             |
 
 ---
 
@@ -35,11 +36,13 @@
 ### 安装 cpkm
 
 #### 方法一：通过脚本安装
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/your-repo/cpkm/main/install.sh | bash
 ```
 
 #### 方法二：手动安装
+
 1. 下载最新版本的 [release](https://github.com/your-repo/cpkm/releases)。
 2. 解压并添加到系统路径：
    ```bash
@@ -48,27 +51,35 @@ curl -fsSL https://raw.githubusercontent.com/your-repo/cpkm/main/install.sh | ba
    ```
 
 ### 初始化项目
+
 在你的项目根目录下运行以下命令：
+
 ```bash
 cpkm init
 ```
-这将生成一个 `cpkm.toml` 文件，用于管理项目依赖。
+
+这将生成一个 `cpkm.json` 文件，用于管理项目依赖。
 
 ### 安装依赖
+
 ```bash
 cpkm add <package-name>
 ```
+
 例如：
+
 ```bash
 cpkm add fmt
 ```
 
 ### 更新依赖
+
 ```bash
 cpkm update
 ```
 
 ### 构建项目
+
 ```bash
 cpkm build
 ```
@@ -77,20 +88,42 @@ cpkm build
 
 ## 📊 **配置文件示例**
 
-以下是 `cpkm.toml` 的一个典型示例：
+以下是 `cpkm.json` 的一个典型示例：
 
-```toml
-[project]
-name = "my-awesome-project"
-version = "0.1.0"
-
-[dependencies]
-fmt = "9.1.0"
-spdlog = "1.10.0"
-
-[build]
-cxxflags = "-O2 -Wall"
-ldflags = "-pthread"
+```json
+{
+  "project": "cpkm_test_project",
+  "version": "1.0.0",
+  "builder": {
+    "type": "cmake",
+    "version": "3.10.0",
+    "cmakeMinimumRequired": "2.8.12",
+    "c_flags": "-Wall",
+    "cxx_flags": "-Wall",
+    "ld_flags": "-L/opt/mysql/lib",
+    "cxx_standard": "17",
+    "c_standard": "11"
+  },
+  "includes": [
+    "include/*"
+  ],
+  "targets": [
+    {
+      "name": "MyApp",
+      "type": "executable",
+      "sources": [
+        "Sources/*"
+      ],
+      "includes": [
+        "include_p/*"
+      ]
+    }
+  ],
+  "dependencies": {
+    "foo": "1.0.0 - 2.9999.9999",
+    "bar": ">=1.0.2 <2.1.2"
+  }
+}
 ```
 
 ---

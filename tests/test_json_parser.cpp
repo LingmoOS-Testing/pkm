@@ -9,8 +9,8 @@
 #include <fstream>
 #include <gtest/gtest.h>
 
-#include "config_json.h"
-#include "package_json.h"
+#include "json/config_json.h"
+#include "json/package_json.h"
 #include "nlohmann/json.hpp"
 
 TEST(cpkm_test_json_project, JSONToNativeTest) {

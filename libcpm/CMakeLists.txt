@@ -11,4 +11,5 @@ target_link_libraries(cpkm_lib
         sqlite3
         pthread
         nlohmann_json::nlohmann_json
+        fmt::fmt
 )
