@@ -5,8 +5,8 @@
  *  Date: 25-6-21
  *  Modify Record:
  */
-#ifndef PACKAGE_JSON_H
-#define PACKAGE_JSON_H
+#ifndef CONFIG_JSON_H
+#define CONFIG_JSON_H
 
 #include <string>
 #include <list>
@@ -128,7 +128,7 @@ inline void from_json(const nlohmann::json& j, PackageConfig<builder::cmake>& p)
   };
 
   // prepare targets
-  std::list<target::targetConfig> targets;
+  std::list<target::targetConfig> targets = {};
   for (const auto& target : j.at("targets")) {
     target::targetConfig t;
     switch (str2tag(target.at("type").get<std::string>())) {
@@ -153,4 +153,4 @@ inline void from_json(const nlohmann::json& j, PackageConfig<builder::cmake>& p)
 }
 }
 template struct cpkm::json::config::PackageConfig<cpkm::json::config::builder::cmake>;
-#endif //PACKAGE_JSON_H
+#endif //CONFIG_JSON_H

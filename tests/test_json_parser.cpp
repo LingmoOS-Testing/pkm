@@ -10,11 +10,11 @@
 #include <gtest/gtest.h>
 
 #include "config_json.h"
+#include "package_json.h"
 #include "nlohmann/json.hpp"
 
-using namespace cpkm::json::config;
-
-TEST(cpkm_test_json, JSONToNativeTest) {
+TEST(cpkm_test_json_project, JSONToNativeTest) {
+  using namespace cpkm::json::config;
   std::string file_dir = std::string(CPKM_TEST_DIR) + std::string("/assets/PKGConfigs.json");
   std::ifstream f(file_dir);
   ASSERT_TRUE(f.is_open());
@@ -45,7 +45,8 @@ TEST(cpkm_test_json, JSONToNativeTest) {
   ASSERT_EQ(p.dependencies.at("bar"), std::string(">=1.0.2 <2.1.2"));
 }
 
-TEST(cpkm_test_json, NativeToJSONTest) {
+TEST(cpkm_test_json_project, NativeToJSONTest) {
+  using namespace cpkm::json::config;
   std::string file_dir = std::string(CPKM_TEST_DIR) + std::string("/assets/PKGConfigs.json");
   std::ifstream f(file_dir);
   ASSERT_TRUE(f.is_open());
@@ -61,4 +62,29 @@ TEST(cpkm_test_json, NativeToJSONTest) {
   ASSERT_EQ(j.at("targets"), data.at("targets"));
   ASSERT_EQ(j.at("dependencies"), data.at("dependencies"));
   ASSERT_EQ(j.at("includes"), data.at("includes"));
+}
+
+TEST(cpkm_test_json_package, JSONToNativeTest) {
+  using namespace cpkm::json::package;
+  std::string file_dir = std::string(CPKM_TEST_DIR) + std::string("/assets/PKGLocks.json");
+  std::ifstream f(file_dir);
+  ASSERT_TRUE(f.is_open());
+
+  nlohmann::json data = nlohmann::json::parse(f);
+  PackageLock p = data.get<PackageLock>();
+  ASSERT_EQ(p.packageName, std::string("hexo-site"));
+}
+
+TEST(cpkm_test_json_package, NativeToJSONTest) {
+  using namespace cpkm::json::package;
+  std::string file_dir = std::string(CPKM_TEST_DIR) + std::string("/assets/PKGLocks.json");
+  std::ifstream f(file_dir);
+  ASSERT_TRUE(f.is_open());
+
+  nlohmann::json data = nlohmann::json::parse(f);
+  PackageLock p = data.get<PackageLock>();
+
+  // convert back to json
+  nlohmann::json j = p;
+  ASSERT_EQ(j.at("lockfileVersion"), data.at("lockfileVersion"));
 }
